@@ -15,7 +15,7 @@
 class SimplexMCMC: public glp::Simplex {
 public:
     static constexpr double fractionalK = 0.1;
-    static constexpr double tol = 1e-8;
+//    static constexpr double tol = 1e-8;
 
 //    using glp::Simplex::pivot;
 
@@ -51,10 +51,13 @@ public:
 
     static glp::Problem &initialiseProblem(glp::Problem &lp);
 
+    void findFeasibleStartPoint(); // phase 1
+
     void setLPState(const std::vector<double> &lpState);
 
     // TEST STUFF
     int countFractionalPivCols();
+    int infeasibilityCount();
 
 protected:
     void processProposal(const ProposalPivot &proposal);
@@ -69,6 +72,8 @@ protected:
     void revertLPSolution(const ProposalPivot &pivot);
 
     bool solutionIsPrimaryFeasible();
+
+    double infeasibility();
 };
 
 

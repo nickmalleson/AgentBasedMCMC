@@ -5,7 +5,7 @@
 #include "SimplexMCMC.h"
 #include "ProposalPivot.h"
 #include "Random.h"
-#include "ColumnPivot.h"
+#include "Phase2Pivot.h"
 #include "ProbabilisticColumnPivot.h"
 #include <algorithm>
 #include <cmath>
@@ -22,6 +22,21 @@ SimplexMCMC::SimplexMCMC(glp::Problem &prob, const std::function<double (const s
     setObjective(glp::SparseVec());
 }
 
+
+// Starting with zero solution, find a solution that satisfies the observations and
+// the interaction rules.
+void SimplexMCMC::findFeasibleStartPoint() {
+    int iterations = 0;
+    do {
+        ProposalPivot proposal = Phase1Pivot(*this);
+        pivot(proposal);
+        std::cout << iterations << " Pivoted on " << proposal.i << ", " << proposal.j << " " << proposal.deltaj << " " << proposal.leavingVarToUpperBound
+                  << " " << isAtUpperBound(proposal.j)
+                  << "  Infeasibility = " << infeasibility() << std::endl;
+        iterations++;
+    } while(!solutionIsPrimaryFeasible() && iterations < 3200);
+
+}
 
 
 // Calculate the degeneracy probability of the current state
@@ -126,11 +141,11 @@ void SimplexMCMC::processProposal(const ProposalPivot &proposalPivot) {
     }
 }
 
-//double SimplexMCMC::logTransitionProb(const ColumnPivot &proposal) {
+//double SimplexMCMC::logTransitionProb(const Phase2Pivot &proposal) {
 //    return -log(nNonBasic())-log(proposal.pivotRows.size());
 //}
 //
-//double SimplexMCMC::logReverseTransitionProb(const ColumnPivot &proposal) {
+//double SimplexMCMC::logReverseTransitionProb(const Phase2Pivot &proposal) {
 //    int degeneracyCount = 1;
 //    for(int i=1; i<proposal.col.size(); ++i) {
 //        if(i != proposal.i && fabs(proposal.col[i]) > 1e-6 && (b[i] == u[head[i]] || b[i] == l[head[i]])) ++degeneracyCount;
@@ -162,13 +177,13 @@ ProposalPivot SimplexMCMC::proposePivot() {
 // To be based on rate of change of L1-norm infeasibility objective?
 // uniform prob for now
 int SimplexMCMC::proposeColumn() {
-    // choose a pivot column
+    // chooseFromPMF a pivot column
     return Random::nextInt(1,n - m + 1);
 }
 
 
 // Moved to ProbabilisticColumnPivot
-//void SimplexMCMC::proposeRow(ColumnPivot &colProposal) {
+//void SimplexMCMC::proposeRow(Phase2Pivot &colProposal) {
 //    if(colProposal.pivotRows.size() > 0) {
 //        colProposal.i = colProposal.pivotRows[Random::nextInt(colProposal.pivotRows.size())];
 //    } else {
@@ -202,11 +217,36 @@ int SimplexMCMC::countFractionalPivCols() {
     int nFractionals = 0;
     double delta;
     for(int j=1; j<=nNonBasic(); ++j) {
-        delta = fabs(ColumnPivot(*this, j).deltaj);
+        delta = fabs(Phase2Pivot(*this, j).deltaj);
         if(delta < 0.9999 && delta > 0.0001) ++nFractionals;
     }
     return nFractionals;
 }
+
+
+int SimplexMCMC::infeasibilityCount() {
+    int infeasibility = 0;
+    for(int i=1; i<=nBasic();++i) {
+        int k = head[i];
+        if(b[i] < l[k] - tol || b[i] > u[k] + tol) ++infeasibility;
+    }
+    return infeasibility;
+}
+
+double SimplexMCMC::infeasibility() {
+    double dist = 0.0;
+    for(int i=1; i <= nBasic(); ++i) {
+        int k = head[i];
+        double v = b[i];
+        if(v < l[k]) {
+            dist += l[k] - v;
+        } else if(v > u[k]) {
+            dist += v - u[k];
+        }
+    }
+    return dist;
+}
+
 
 void SimplexMCMC::updateLPSolution(const ProposalPivot &pivot) {
     int nConstraints = originalProblem.nConstraints();
