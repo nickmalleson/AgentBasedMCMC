@@ -61,7 +61,8 @@ void ProbabilisticColumnPivot::chooseCol() {
         // choose with prob proportional to alpha if reduced objective is non-zero or 1 if zero
         simplex.recalculatePi();
         std::vector<double> cdf(simplex.nNonBasic() + 1, 0.0);
-        std::vector<double> reducedObjective = simplex.reducedObjective();
+        std::vector<double> reducedObjective = simplex.reducedCost();
+        //std::vector<double> reducedObjective = simplex.reducedObjective();
         double cumulativeP = 0.0;
 
         for(int j=1; j<= simplex.nNonBasic(); ++j) {

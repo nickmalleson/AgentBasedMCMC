@@ -6,7 +6,7 @@ link_directories(lib)
 link_libraries(glpkpp boost_system boost_iostreams)
 
 #include_directories(glpk glpk/amd glpk/api glpk/bflib  glpk/colamd  glpk/draft  glpk/env  glpk/intopt  glpk/minisat  glpk/misc  glpk/mpl  glpk/npp glpk/proxy glpk/simplex  glpk/zlib)
-include_directories(glpkppinclude)
+include_directories(glpkppinclude /usr/local/include/)
 
 #file(GLOB GLPK_SOURCES
 #        glpk/*/*.h

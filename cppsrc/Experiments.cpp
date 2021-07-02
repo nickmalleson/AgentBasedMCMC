@@ -58,7 +58,7 @@ void Experiments::PredPreyExpt() {
 
     ////////////////////////////////////////// DO SAMPLING ///////////////////////////////////////////
     ModelState<PredPreyAgent> meanState;
-    for(int n=0; n<100000; ++n) {
+    for(int n=0; n<1000; ++n) {
         mcmc.nextSample();
         if(n%100 == 0) std::cout << "Sample " << n << " : " << glp::SparseVec(mcmc.X()) << std::endl;
 //        std::cout << "number of fractional pivots = " << mcmc.countFractionalPivCols() << " / " << mcmc.nNonBasic() << std::endl;
